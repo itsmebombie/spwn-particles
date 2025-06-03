@@ -1,0 +1,82 @@
+extract obj_props
+
+type @screen
+type @scanline
+type @pixel
+
+impl @pixel {
+    new: (scanline_group: @group, group: @group, size: @number, i: @number) -> @pixel {
+        $.extend_trigger_func(scanline_group, () {
+            $.add(trigger{
+                OBJ_ID: 3608,
+                TARGET: group,
+                TARGET_POS: group,
+                MULTI_TRIGGER: true,
+                547: i * size, // offset x
+                554: 1, // size
+            })
+        })
+    },
+}
+
+impl @scanline {
+    new: (x: @number, y: @number, width: @number, duration: @number, size: @number) -> @scanline {
+        scanline_group = ?g
+        all_particles_group = ?g
+
+        let groups = []
+
+        for i in 0..width {
+            group = ?g
+
+            $.add(obj{ // particle system
+                OBJ_ID: 2065,
+                X: x, Y: y,
+                GROUPS: [group, all_particles_group],
+                156: 3,
+                145: "7a1a{}a0a8a0a0a0a0a0a0a0a0a0a0a0a0a{}a0a0a0a1a0a1a0a1a0a1a0a0a0a0a0a1a0a1a0a1a0a1a0a0a0a0a0a0a0a0a0a0a0a0a2a0a0a0a0a0a0a0a0a0a0a0a1a0a0a0a0a0a0a0".
+                fmt([duration, size]),
+                146: 1, // use obj color
+            })
+
+            @pixel::new(scanline_group, group, size, i+1)
+            groups.push(group)
+        }
+
+        return @scanline::{
+            width,
+            scanline_group,
+            groups,
+            all_particles_group,
+        }
+    },
+}
+
+impl @screen {
+    new: (x: @number, y: @number, width: @number, height: @number, size: @number = 1, duration: @number = 1) -> @screen {
+        particle_group = ?g
+        scanline = @scanline::new(x, y, width, duration, size)
+
+        render_line = !{
+            scanline.scanline_group!
+    
+            $.add( trigger{
+                OBJ_ID: 901,
+                TARGET: scanline.all_particles_group,
+                MOVE_X: 0,
+                MOVE_Y: -size,
+                DURATION: 0,
+                544: true, // silent
+            })
+        }
+
+        return @screen::{
+            x, y,
+            width, height,
+            duration,
+            size,
+            scanline,
+            render_line,
+        }
+    },
+}

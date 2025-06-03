@@ -1,0 +1,78 @@
+bytes_to_int = (bytearray: @array, signed: @bool = false) { // little endian
+    powers = [1, 256, 65536, 16777216]
+
+    let x = bytearray[0]
+    for i in 1..bytearray.length {
+        x += bytearray[i] * powers[i]
+    }
+
+    if signed && bytearray[-1] > 127 {
+        x -= 4294967295
+        x -= 1
+    }
+
+    return x
+}
+
+read_bmp = (bmp_data) {
+    let image = []
+    
+    // header
+    if bmp_data[:2] != [66, 77] { // != b'BM'
+        throw "not a bmp image"
+    }
+
+    file_size = bytes_to_int(bmp_data[2:6])
+    pixel_array_offset = bytes_to_int(bmp_data[10:14])
+
+
+    // dib header
+    dib_header_size = bytes_to_int(bmp_data[14:18])
+    // if dib_header_size != 40 {
+    //     throw "unsupported bmp format"
+    // }
+
+    dib_header = bmp_data[18:dib_header_size + 18]
+    width = bytes_to_int(dib_header[:4], signed=true)
+    height = bytes_to_int(dib_header[4:8], signed=true)
+    bit_count = bytes_to_int(dib_header[10:12])
+
+    if bit_count != 24 {
+        throw "unsupported bit size"
+    }
+
+    // pixel data
+    bytes_per_pixel = 3
+    row_stride = width * bytes_per_pixel
+    padded_row_size = row_stride if row_stride % 4 == 0 else row_stride + (4 - row_stride % 4)
+
+    pixel_data = bmp_data[pixel_array_offset : pixel_array_offset + padded_row_size * height]
+
+    for row_index in 0..height {
+        row_start = row_index * padded_row_size
+        let row = []
+        for col_index in 0..width {
+            pixel_start = row_start + col_index * bytes_per_pixel
+            b = pixel_data[pixel_start]
+            g = pixel_data[pixel_start + 1]
+            r = pixel_data[pixel_start + 2]
+            row.push([r, g, b]) // RGB
+        }
+        image.push(row)
+    }
+
+    // If height is positive, image is bottom-up, so reverse
+    if height > 0 {
+        image = image.reverse()
+    }
+
+    return {
+        image,
+        width,
+        height
+    }
+}
+
+return {
+    read_bmp: read_bmp
+}

@@ -1,0 +1,23 @@
+// goog code
+
+extract obj_props
+
+names = obj_props.map((name, data) => name)
+ids = obj_props.map((name, data) => data.id)
+
+objs = level.get_objects(Z_ORDER, =="33")
+$.print(objs, "\n")
+
+for raw_object in objs {
+    object = @array(@string(raw_object))[:-1].join("").split(",")
+    
+    $.print("\nobj{")
+    for i in 0..2..object.length {
+        id = object[i] as @number
+        if id == 155 { continue } // useless, its always there apparently
+
+        idx = ids.index(id)
+        $.print("    {}: {},".fmt([names[idx] if idx != null else id, object[i+1]]))
+    }
+    $.print("}")
+}

@@ -1,0 +1,35 @@
+extract obj_props
+
+import "src/"
+bmp_reader = import "bmp_reader.spwn"
+
+image = bmp_reader.read_bmp($.readfile("funny.bmp", "bin"))
+screen = @screen::new(130, 75 + image.height, image.width, image.height, size=1, duration=500)
+
+// i = @counter::new(0, bits=0)
+// while_loop(() => true, () {
+//     row = image.image[i.to_const(0..image.height)]
+
+//     for j in 0..image.width {
+//         color = row[j]
+//         -> screen.scanline.groups[j].pulse(@chroma::from_rgb8(color[0], color[1], color[2]), hold=0.1)
+//     }
+
+//     screen.render_line!
+
+//     i += 1
+//     wait(1/20)
+// }, delay = 0)
+
+
+for i in 0..image.height {
+    wait(1/20)
+    row = image.image[i]
+
+    for j in 0..image.width {
+        color = row[j]
+        -> screen.scanline.groups[j].pulse(@chroma::from_rgb8(color[0], color[1], color[2]), hold=0.1)
+    }
+
+    screen.render_line!
+}
