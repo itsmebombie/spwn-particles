@@ -1,10 +1,14 @@
+SIZE = 0.7
+SCANLINES = 16
+
 extract obj_props
 
 import "src/"
+extract import "frame.spwn"
 bmp_reader = import "bmp_reader.spwn"
 
-image = bmp_reader.read_bmp($.readfile("funny.bmp", "bin"))
-screen = @screen::new(130, 75 + image.height, image.width, image.height, size=1, duration=500)
+image = bmp_reader.read_bmp($.readfile("test.bmp", "bin"))
+screen = @screen::new(130, 45 + image.height * SIZE, image.width, image.height, size=SIZE, duration=500, scanlines_nr=SCANLINES)
 
 // i = @counter::new(0, bits=0)
 // while_loop(() => true, () {
@@ -21,15 +25,23 @@ screen = @screen::new(130, 75 + image.height, image.width, image.height, size=1,
 //     wait(1/20)
 // }, delay = 0)
 
+img_len = image.image.length
+for i in 0..SCANLINES..image.height {
+    fwait(i / SCANLINES + 1)
+    $.print(i)
+    
+    for sc in 0..SCANLINES {
+        row_idx = i + sc
 
-for i in 0..image.height {
-    wait(1/20)
-    row = image.image[i]
+        if row_idx >= img_len { continue }
 
-    for j in 0..image.width {
-        color = row[j]
-        -> screen.scanline.groups[j].pulse(@chroma::from_rgb8(color[0], color[1], color[2]), hold=0.1)
+        row = image.image[row_idx]
+
+        for j in 0..image.width {
+            color = row[j]
+            -> screen.scanlines[sc].groups[j].pulse(@chroma::from_rgb8(color[0], color[1], color[2]))
+        }
+
     }
-
-    screen.render_line!
+    screen.render_lines!
 }

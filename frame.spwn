@@ -1,0 +1,130 @@
+#[no_optimizer]
+// stolen from G.js :rofl:
+
+extract obj_props
+
+impl @block {
+    collision_block: (self, x: @number, y: @number) {
+		return obj{
+			OBJ_ID: 1816,
+			X: x,
+			Y: y,
+			BLOCK_A: self,
+		}
+	},
+    if_colliding: (self, b2: @block, true_id: @group = null, false_id: @group = null) {
+        let a = trigger{
+            OBJ_ID: 3609,
+            BLOCK_A: self,
+            BLOCK_B: b2,
+        }
+
+        if true_id != null {
+            $.edit_obj(a, TARGET, true_id)
+        }
+
+        if false_id != null {
+            $.edit_obj(a, FOLLOW, false_id)
+        }
+
+        $.add(a)
+    }
+}
+
+let rfl_setup = () {
+    let enter_group = ?g
+    let blockA = ?b
+    let blockB = ?b
+
+    let center = ?g
+    let target = ?g
+    
+    // collision blocks
+    blockA.collision_block(-135, 135).with(SCALING, 0.25).with(GROUPS, target).add()
+    blockB.collision_block(-135, 105).with(SCALING, 0.25).with(GROUPS, center).with(DYNAMIC_BLOCK, true).add()
+    
+    // center
+    $.add(obj{
+        OBJ_ID: 3807,
+        X: -135,
+        Y: 105,
+        GROUPS: center,
+        274: center // group parents
+    })
+
+    // area (area trigger)
+    $.add(trigger{
+        OBJ_ID: 3006,
+        155: 1,
+        36: 1,
+        222: 30000,
+        218: -30000,
+        243: 2,
+        249: 2,
+        287: 1,
+        TARGET: target,
+        CENTER: center,
+        263: 1,
+        264: 1,
+        276: 1,
+        10: 0.5
+    })
+
+    // move loop
+    while_loop(() => true, () {
+        $.add(move_trigger(center, -2400, 0).
+            with(@object_key::{id: 544, pattern: @bool}, true). // with `silent: true`
+            with(SPAWN_TRIGGERED, true).
+            with(MULTI_TRIGGER, true).
+            with(GROUPS, $.trigger_fn_context()), true)
+        -> center.move(2400, 0, 1)
+    }, delay = 1)
+
+    timer_cycle = !{
+        $.add(trigger{ // timer
+            OBJ_ID: 3614,
+            TARGET: $.trigger_fn_context(), // fire same group after 1s
+            467: 0,     // start time
+            473: 1,     // end time
+            474: true,  // stop checked (?)
+            470: 240,   // time mod
+        })
+
+        blockA.if_colliding(blockB, enter_group) // aka `if blockA.is_colliding(blockB) { enter_group! }`
+    }
+
+    timer_cycle!
+
+    return { enter_group, timer_cycle };
+}
+
+let g_setup
+
+rframe_loop = (func: @trigger_function) {
+    if g_setup == null {
+        g_setup = rfl_setup()
+    }
+
+    $.extend_trigger_func(g_setup.enter_group, () {
+        func!
+    })
+
+    return g_setup.timer_cycle
+}
+
+
+fwait = (frames_to_wait: @number = 1) {
+    if frames_to_wait == 0 { return }
+
+    frame_c = counter(bits=0)
+
+    loop = rframe_loop(!{
+        frame_c.item.add(1)
+    })
+
+    on(count(frame_c.item, frames_to_wait), !{
+        -> return
+    })
+}
+
+return { fwait, rframe_loop }
