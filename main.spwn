@@ -1,5 +1,12 @@
-SIZE = 0.7
-SCANLINES = 16
+// CONFIG
+
+SIZE = 0.5                 // particle scale and offset
+SCANLINES = 8              // amount of lines rendered per frame (each pixel here is 1 group)
+IMAGE_PATH = "test.bmp"    // path to target image file
+X_OFF = 130                // x offset, in units
+Y_OFF = 45                 // y offset, in units
+
+// END CONFIG
 
 extract obj_props
 
@@ -7,28 +14,31 @@ import "src/"
 extract import "frame.spwn"
 bmp_reader = import "bmp_reader.spwn"
 
-image = bmp_reader.read_bmp($.readfile("test.bmp", "bin"))
-screen = @screen::new(130, 45 + image.height * SIZE, image.width, image.height, size=SIZE, duration=500, scanlines_nr=SCANLINES)
 
-// i = @counter::new(0, bits=0)
-// while_loop(() => true, () {
-//     row = image.image[i.to_const(0..image.height)]
+$.print("Reading image...")
+image = bmp_reader.read_bmp($.readfile(IMAGE_PATH, "bin"))
 
-//     for j in 0..image.width {
-//         color = row[j]
-//         -> screen.scanline.groups[j].pulse(@chroma::from_rgb8(color[0], color[1], color[2]), hold=0.1)
-//     }
+$.print(
+    "\nImage width: ", image.width,
+    "\nImage height: ", image.height,
+    "\nScanline total pixels: ", image.width * SCANLINES,
+    "\n"
+)
 
-//     screen.render_line!
+if image.width * SCANLINES >= 9900 {
+    $.print("WARNING: this might take too many groups and SPWN might fail to compile.")
+}
 
-//     i += 1
-//     wait(1/20)
-// }, delay = 0)
+if image.width * image.height >= 100000 {
+    $.print("WARNING: this image might not be able to be fully rendered due to the resolution being too large.")
+}
 
+screen = @screen::new(X_OFF, Y_OFF + image.height * SIZE, image.width, image.height, size=SIZE, duration=9999, scanlines_nr=SCANLINES)
+
+$.print()
 img_len = image.image.length
 for i in 0..SCANLINES..image.height {
     fwait(i / SCANLINES + 1)
-    $.print(i)
     
     for sc in 0..SCANLINES {
         row_idx = i + sc
@@ -42,6 +52,7 @@ for i in 0..SCANLINES..image.height {
             -> screen.scanlines[sc].groups[j].pulse(@chroma::from_rgb8(color[0], color[1], color[2]))
         }
 
+        $.print("\u{001b}[2K\u{001b}[1FProcessed line: ", row_idx+1, "/", image.height)
     }
     screen.render_lines!
 }

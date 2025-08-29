@@ -60,7 +60,6 @@ impl @screen {
         all_particles_group = ?g
 
         let scanlines = []
-
         for i in 0..scanlines_nr {
             scanlines.push(@scanline::new(x, y - i*size, width, duration, size, all_particles_group))
         }
@@ -90,38 +89,4 @@ impl @screen {
             render_lines,
         }
     },
-    // new: (x: @number, y: @number, width: @number, height: @number, size: @number = 1, duration: @number = 1) -> @screen {
-    //     particle_group = ?g
-
-    //     let scanlines = []
-    //     for i in 0..height {
-    //         scanline = @scanline::new(x, y, width, duration, size)
-    //         scanlines.push(scanline)
-    //     }
-
-    //     render_lines = !{
-    //         for scanline in scanlines {
-    //             scanline.scanline_group!
-    //         }
-
-    //         // move scanlines down
-    //         $.add(trigger{
-    //             OBJ_ID: 901,
-    //             TARGET: particle_group,
-    //             MOVE_X: 0,
-    //             MOVE_Y: -size,
-    //             DURATION: 0,
-    //             544: true, // silent
-    //         })
-    //     }
-
-    //     return @screen::{
-    //         x, y,
-    //         width, height,
-    //         duration,
-    //         size,
-    //         scanlines,
-    //         render_lines,
-    //     }
-    // },
 }
